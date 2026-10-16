@@ -12,6 +12,7 @@ const XHIGH_MODELS = [
   'claude-opus-4-7-thinking',
   'claude-opus-4-8-thinking',
   'claude-opus-5-thinking',
+  'claude-opus-5-5-thinking',
   'claude-sonnet-5-thinking'
 ]
 
@@ -30,6 +31,7 @@ describe('model registry', () => {
         'claude-opus-4-7-thinking',
         'claude-opus-4-8-thinking',
         'claude-opus-5-thinking',
+        'claude-opus-5-5-thinking',
         'claude-sonnet-4-5-thinking',
         'claude-sonnet-4-6-thinking',
         'claude-sonnet-5-thinking'
@@ -96,6 +98,8 @@ describe('model registry', () => {
   test('carries limit and modalities through to both entries', () => {
     expect(registry['claude-opus-5'].limit).toEqual({ context: 1000000, output: 64000 })
     expect(registry['claude-opus-5-thinking'].limit).toEqual(registry['claude-opus-5'].limit)
+    expect(registry['claude-opus-5-5'].limit).toEqual({ context: 1000000, output: 64000 })
+    expect(registry['claude-opus-5-5-thinking'].limit).toEqual(registry['claude-opus-5-5'].limit)
     expect(registry['claude-opus-5-thinking'].modalities).toEqual(
       registry['claude-opus-5'].modalities
     )

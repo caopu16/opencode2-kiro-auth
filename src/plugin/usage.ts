@@ -1,3 +1,4 @@
+import { kiroFetch } from './proxy'
 import { KiroAuthDetails, ManagedAccount } from './types'
 
 export async function fetchUsageLimits(auth: KiroAuthDetails): Promise<any> {
@@ -19,7 +20,7 @@ export async function fetchUsageLimits(auth: KiroAuthDetails): Promise<any> {
     if (auth.profileArn) url.searchParams.set('profileArn', auth.profileArn)
 
     try {
-      const res = await fetch(url.toString(), {
+      const res = await kiroFetch(url.toString(), {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${auth.access}`,

@@ -1,4 +1,3 @@
-import type { AuthOuathResult } from '@opencode-ai/plugin'
 import { execFile } from 'node:child_process'
 import { extractRegionFromArn, normalizeRegion } from '../../constants.js'
 import type { AccountRepository } from '../../infrastructure/database/account-repository.js'
@@ -56,7 +55,11 @@ export class IdcAuthMethod {
     private accountManager: any
   ) {}
 
-  async authorize(inputs?: Record<string, string>): Promise<AuthOuathResult> {
+  /**
+   * Start the device-code flow. Returns the OpenCode v2 OAuth authorization shape:
+   * `callback` is a promise that settles once polling issues a token.
+   */
+  async authorize(inputs?: Record<string, string>, methodID = 'idc'): Promise<any> {
     const configuredServiceRegion: KiroRegion = this.config.default_region
     const invokedWithoutPrompts = !inputs || Object.keys(inputs).length === 0
 
@@ -90,11 +93,7 @@ export class IdcAuthMethod {
     // Open the *AWS* verification page directly (no local web server).
     openBrowser(verificationUrl)
 
-    return {
-      url: verificationUrl,
-      instructions: `Open the verification URL and complete sign-in.\nCode: ${auth.userCode}`,
-      method: 'auto',
-      callback: async (): Promise<{ type: 'success'; key: string } | { type: 'failed' }> => {
+    const complete = async () => {
         try {
           // Step 2: poll until token is issued (standard device-code flow)
           const token = await pollKiroIDCToken(
@@ -184,7 +183,14 @@ export class IdcAuthMethod {
           await this.repository.save(acc)
           this.accountManager?.addAccount?.(acc)
 
-          return { type: 'success', key: token.accessToken }
+          return {
+            type: 'oauth' as const,
+            methodID,
+            access: token.accessToken,
+            refresh: token.refreshToken,
+            expires: token.expiresAt,
+            metadata: { email, accountId: id }
+          }
         } catch (e: any) {
           const err = e instanceof Error ? e : new Error(String(e))
           logger.error('IDC auth callback failed', err)
@@ -192,7 +198,14 @@ export class IdcAuthMethod {
             `IDC authorization failed: ${err.message}. Check ~/.config/opencode/kiro-logs/plugin.log for details. If this is an Identity Center account, ensure you have selected an AWS Q Developer/CodeWhisperer profile (try: kiro-cli profile).`
           )
         }
-      }
+    }
+
+    return {
+      url: verificationUrl,
+      instructions: `Open the verification URL and complete sign-in.\nCode: ${auth.userCode}`,
+      mode: 'auto' as const,
+      expiresAt: Date.now() + auth.expiresIn * 1000,
+      callback: complete()
     }
   }
 }

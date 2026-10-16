@@ -102,7 +102,17 @@ export const KiroConfigSchema = z.object({
   // structured results. Requires a Pro account (profileArn); on free Builder ID
   // accounts the tool is not registered. Disable to avoid overlap with other
   // search tools/MCP servers.
-  web_search_enabled: z.boolean().default(true)
+  web_search_enabled: z.boolean().default(true),
+
+  // Route all Kiro API traffic (inference, token refresh, usage, web search)
+  // through an HTTP(S) proxy. The AWS SDK and Node's fetch otherwise ignore the
+  // system proxy and connect directly, which Kiro rejects (400 "Invalid model" /
+  // 403 "subscription does not support this application") when the direct egress
+  // IP is not an accepted region. Set to a proxy URL (e.g. "http://127.0.0.1:7890")
+  // to force traffic through it; leave empty to honor the HTTPS_PROXY / HTTP_PROXY /
+  // ALL_PROXY environment variables, and fall back to a direct connection when none
+  // is set. Set to "direct" to disable proxying entirely.
+  proxy_url: z.string().optional()
 })
 
 export type KiroConfig = z.infer<typeof KiroConfigSchema>
@@ -122,5 +132,6 @@ export const DEFAULT_CONFIG: KiroConfig = {
   auto_sync_kiro_cli: true,
   enable_log_api_request: false,
   auto_effort_mapping: true,
-  web_search_enabled: true
+  web_search_enabled: true,
+  proxy_url: undefined
 }

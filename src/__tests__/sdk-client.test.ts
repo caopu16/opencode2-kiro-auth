@@ -114,4 +114,34 @@ describe('SDK client', () => {
 
     clearSdkClientCache()
   })
+
+  // Kiro validates the Kiro IDE identity via User-Agent; the SDK's built-in
+  // user-agent middleware would otherwise overwrite it with an aws-sdk-js UA
+  // that Kiro rejects (403 "subscription does not support this application").
+  test('sends the Kiro IDE User-Agent, not the aws-sdk-js default', async () => {
+    clearSdkClientCache()
+
+    const client = createSdkClient(auth(), 'us-east-1')
+    const { request } = await captureRequest(client)
+
+    expect(request.headers['user-agent']).toBe('KiroIDE')
+    expect(request.headers['x-amz-user-agent']).toBe('KiroIDE')
+    expect(String(request.headers['user-agent'])).not.toContain('codewhispererstreaming')
+    expect(request.headers['x-amzn-kiro-agent-mode']).toBe('vibe')
+
+    clearSdkClientCache()
+  })
+
+  test('caches separately per proxy url', () => {
+    clearSdkClientCache()
+
+    const direct = createSdkClient(auth(), 'us-east-1')
+    const proxied = createSdkClient(auth(), 'us-east-1', undefined, 'http://127.0.0.1:7890')
+    const directAgain = createSdkClient(auth(), 'us-east-1')
+
+    expect(proxied).not.toBe(direct)
+    expect(directAgain).toBe(direct)
+
+    clearSdkClientCache()
+  })
 })

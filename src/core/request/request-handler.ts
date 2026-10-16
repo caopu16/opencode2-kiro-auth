@@ -139,7 +139,7 @@ export class RequestHandler {
         this.logSdkRequest(sdkPrep, acc, apiTimestamp)
       }
       try {
-        const client = createSdkClient(auth, sdkPrep.region, sdkPrep.effort)
+        const client = createSdkClient(auth, sdkPrep.region, sdkPrep.effort, this.config.proxy_url)
         const command = new GenerateAssistantResponseCommand({
           conversationState: sdkPrep.conversationState as any,
           profileArn: sdkPrep.profileArn
@@ -353,8 +353,6 @@ export class RequestHandler {
   }
 
   private async triggerReauth(showToast: ToastFunction): Promise<boolean> {
-    if (!this.client) return false
-
     const cooldownRemaining = REAUTH_FAILURE_COOLDOWN_MS - (Date.now() - this.lastFailedReauthAt)
     if (cooldownRemaining > 0) {
       showToast(
@@ -379,15 +377,10 @@ export class RequestHandler {
   private async performReauth(showToast: ToastFunction): Promise<boolean> {
     try {
       showToast('Session expired. Re-authenticating...', 'warning')
-      await this.client.provider.oauth.authorize({
-        path: { id: 'kiro' },
-        body: { method: 0 }
-      })
-
-      await this.client.provider.oauth.callback({
-        path: { id: 'kiro' },
-        body: { method: 0 }
-      })
+      // OpenCode v2 cannot start an OAuth flow from a request, so the optional
+      // client hook does it; otherwise re-read accounts (e.g. re-synced Kiro CLI).
+      if (typeof this.client?.reauthenticate === 'function') await this.client.reauthenticate()
+      await syncFromKiroCli()
 
       this.repository.invalidateCache()
       const accounts = await this.repository.findAll()

@@ -2,6 +2,7 @@ import { KIRO_CONSTANTS } from '../constants.js'
 import { accessTokenExpired } from '../kiro/auth.js'
 import type { AccountManager } from './accounts.js'
 import * as logger from './logger.js'
+import { kiroFetch } from './proxy.js'
 import { refreshAccessToken } from './token.js'
 import type { KiroAuthDetails } from './types'
 
@@ -51,7 +52,7 @@ export async function kiroWebSearch(
     auth.region
   )
 
-  const res = await fetch(url, {
+  const res = await kiroFetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${auth.access}`,

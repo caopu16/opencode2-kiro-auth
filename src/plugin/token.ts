@@ -1,5 +1,6 @@
 import { decodeRefreshToken, encodeRefreshToken } from '../kiro/auth'
 import { KiroTokenRefreshError } from './errors'
+import { kiroFetch } from './proxy'
 import type { KiroAuthDetails, RefreshParts } from './types'
 
 export async function refreshAccessToken(auth: KiroAuthDetails): Promise<KiroAuthDetails> {
@@ -30,7 +31,7 @@ export async function refreshAccessToken(auth: KiroAuthDetails): Promise<KiroAut
     : 'aws-sdk-js/3.0.0 KiroIDE-0.1.0 os/macos lang/js md/nodejs/18.0.0'
 
   try {
-    const res = await fetch(url, {
+    const res = await kiroFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

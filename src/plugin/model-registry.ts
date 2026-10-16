@@ -111,6 +111,13 @@ const MODEL_SPECS: Record<string, ModelSpec> = {
     modalities: MULTIMODAL,
     thinking: true
   },
+  'claude-opus-5-5': {
+    name: 'Claude Opus 5.5',
+    rate: '2.2x',
+    limit: CONTEXT_1M,
+    modalities: MULTIMODAL,
+    thinking: true
+  },
 
   // Open weight models
   'deepseek-3.2': {
