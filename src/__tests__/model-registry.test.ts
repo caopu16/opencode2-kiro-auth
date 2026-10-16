@@ -8,6 +8,11 @@ import { resolveKiroModel } from '../plugin/models.js'
 const registry = buildModelRegistry() as Record<string, any>
 
 const thinkingIDs = Object.keys(registry).filter((id) => id.endsWith('-thinking'))
+// Models that reason via the <thinking_mode> prompt but reject the effort field
+// (additionalModelRequestFields). They get a thinking entry with no effort
+// variants; see model-registry.ts.
+const EFFORTLESS_THINKING_MODELS = ['claude-sonnet-4-5-thinking', 'claude-opus-4-5-thinking']
+const variantThinkingIDs = thinkingIDs.filter((id) => !EFFORTLESS_THINKING_MODELS.includes(id))
 const XHIGH_MODELS = [
   'claude-opus-4-7-thinking',
   'claude-opus-4-8-thinking',
@@ -23,7 +28,7 @@ describe('model registry', () => {
     }
   })
 
-  test('advertises a thinking companion for each effort-capable Claude model', () => {
+  test('advertises a thinking companion for each thinking-capable Claude model', () => {
     expect(thinkingIDs.sort()).toEqual(
       [
         'claude-opus-4-5-thinking',
@@ -67,14 +72,24 @@ describe('model registry', () => {
 
   describe('thinking variants', () => {
     test('offers xhigh only on models Kiro documents as xhigh-capable', () => {
-      for (const id of thinkingIDs) {
+      for (const id of variantThinkingIDs) {
         const hasXHigh = Object.keys(registry[id].variants).includes('xhigh')
         expect(hasXHigh).toBe(XHIGH_MODELS.includes(id))
       }
     })
 
+    test('effort-rejecting thinking models carry no variants', () => {
+      for (const id of EFFORTLESS_THINKING_MODELS) {
+        expect(thinkingIDs).toContain(id)
+        expect(registry[id].variants).toBeUndefined()
+        // The thinking entry itself is still advertised so <thinking_mode>
+        // reasoning works; it just has no selectable effort levels.
+        expect(registry[id].reasoning).toBe(true)
+      }
+    })
+
     test('variant budgets map back to the effort level they are named for', () => {
-      for (const id of thinkingIDs) {
+      for (const id of variantThinkingIDs) {
         const kiroModel = resolveKiroModel(id)
         for (const [name, variant] of Object.entries<any>(registry[id].variants)) {
           const level = name as Effort
@@ -86,7 +101,7 @@ describe('model registry', () => {
     })
 
     test('variants are ordered low to max', () => {
-      for (const id of thinkingIDs) {
+      for (const id of variantThinkingIDs) {
         const budgets = Object.values<any>(registry[id].variants).map(
           (v) => v.thinkingConfig.thinkingBudget
         )

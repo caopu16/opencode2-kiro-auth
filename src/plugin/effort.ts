@@ -38,13 +38,17 @@ const XHIGH_CAPABLE_MODELS = new Set([
 /**
  * Models that support the 4-value effort enum (no xhigh).
  * xhigh requests on these models are clamped to max.
+ *
+ * Verified against the live Kiro API: sending `additionalModelRequestFields`
+ * (the effort payload) to a model that does not support it fails the entire
+ * request with `400 ValidationException: additionalModelRequestFields is not
+ * supported for this model`, which surfaces in OpenCode as "stream ended
+ * without finish_reason". opus-4.5, sonnet-4, sonnet-4.5 (and its 1m variant),
+ * and haiku-4.5 all reject the field, so they are intentionally excluded.
  */
 const EFFORT_CAPABLE_MODELS = new Set([
-  'claude-opus-4.5',
   'claude-opus-4.6',
   'claude-opus-4.6-1m',
-  'claude-sonnet-4.5',
-  'claude-sonnet-4.5-1m',
   'claude-sonnet-4.6',
   'claude-sonnet-4.6-1m',
   ...XHIGH_CAPABLE_MODELS

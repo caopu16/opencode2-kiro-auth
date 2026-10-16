@@ -22,6 +22,12 @@ describe('effort module', () => {
     test('returns false for unsupported models', () => {
       expect(supportsEffort('claude-haiku-4.5')).toBe(false)
       expect(supportsEffort('unknown-model')).toBe(false)
+      // Verified against the live Kiro API: these reject
+      // additionalModelRequestFields with a 400, so effort must not be injected.
+      expect(supportsEffort('claude-sonnet-4')).toBe(false)
+      expect(supportsEffort('claude-sonnet-4.5')).toBe(false)
+      expect(supportsEffort('claude-sonnet-4.5-1m')).toBe(false)
+      expect(supportsEffort('claude-opus-4.5')).toBe(false)
     })
   })
 
@@ -39,6 +45,7 @@ describe('effort module', () => {
       expect(supportsXHighEffort('claude-opus-4.6')).toBe(false)
       expect(supportsXHighEffort('claude-sonnet-4.6')).toBe(false)
       expect(supportsXHighEffort('claude-opus-4.5')).toBe(false)
+      expect(supportsXHighEffort('claude-sonnet-4.5')).toBe(false)
     })
   })
 

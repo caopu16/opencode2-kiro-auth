@@ -46,19 +46,50 @@ Claude Sonnet / Opus / Haiku 等模型，并带有相当可观的试用额度。
 
 ## 安装
 
-> opencode v2 的插件键名是 `plugins`（v1 为 `plugin`）。配置文件为
-> `~/.config/opencode/opencode.jsonc`。
+> opencode v2 的插件键名是 `plugins`（v1 为 `plugin`）。全局配置文件为
+> `~/.config/opencode/opencode.jsonc`（遵循 `XDG_CONFIG_HOME`）。
+> 注意 opencode **不读** v1 的 `~/.opencode/opencode.json`——如果你从 v1 升级上来，
+> 旧配置里的插件不会生效，需要按下面重新注册。
+
+### 方式一：一键脚本（推荐，从源码装）
+
+本包尚未发布到 npm，先从 GitHub 拉下来跑安装脚本即可。脚本会装依赖、构建、并把插件按
+本地路径注册进 opencode v2 全局配置（幂等，已有配置会合并而非覆盖）：
+
+```bash
+git clone https://github.com/caopu16/opencode2-kiro-auth.git
+cd opencode2-kiro-auth
+./scripts/install.sh
+```
+
+需要一步到位配好代理（见「代理配置」）时，可带上环境变量：
+
+```bash
+KIRO_PROXY_URL="http://127.0.0.1:7890" ./scripts/install.sh
+```
+
+脚本做的事：
+
+1. 检查 Node.js（建议 >= 20）和 opencode 是否就绪；
+2. `npm ci`（有 lock 文件）或 `npm install`，然后 `npm run build`；
+3. 把本仓库绝对路径写进 `~/.config/opencode/opencode.jsonc` 的 `plugins` 数组
+   （已存在则合并，不重复、不覆盖已有插件）；
+4. 若设置了 `KIRO_PROXY_URL` 且 `kiro.json` 不存在，则写入代理配置。
+
+### 方式二：手动注册
+
+构建后在 `~/.config/opencode/opencode.jsonc` 里把本仓库路径加进 `plugins`：
 
 ```jsonc
 {
-  "plugins": ["@caopu16/opencode2-kiro-auth"]
+  "plugins": ["/绝对路径/opencode2-kiro-auth"]
 }
 ```
 
-也可以用本地路径指向本仓库（见「本地开发」）。
+> 待本包发布到 npm 后，也可直接写包名：`"plugins": ["@caopu16/opencode2-kiro-auth"]`。
 
 装好后，插件会注册 `kiro` provider，并自动列出 Kiro 暴露的全部模型，其中每个支持 reasoning
-的模型都会额外带一个 `-thinking` 版本。运行 `/models` 选择即可。
+的模型都会额外带一个 `-thinking` 版本。重启 opencode 后运行 `/models` 选择即可。
 
 如果你自己在配置里定义了 `provider.kiro.models`，会**整体替换**插件内置的模型表。只有在需要
 重命名或限制模型时才这么做，并且注意下面关于 reasoning 标志的说明。

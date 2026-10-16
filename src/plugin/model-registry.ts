@@ -185,19 +185,29 @@ export function buildModelRegistry(): Record<string, unknown> {
 
     if (!spec.thinking) continue
 
+    // Thinking works two ways on Kiro. Every `thinking: true` model reasons via
+    // the `<thinking_mode>` prompt the plugin injects, so the `-thinking` entry
+    // is always advertised. Only models that accept `output_config.effort` also
+    // get selectable effort `variants`; attaching them to a model that rejects
+    // the field would make the request fail with
+    // `400 additionalModelRequestFields is not supported for this model`
+    // (surfacing as "stream ended without finish_reason"), so those models get
+    // the thinking entry without effort variants.
+    //
     // Effort capability is keyed on the resolved Kiro model ID, not the
     // OpenCode-facing one (e.g. claude-opus-5 vs claude-opus-4-6).
     const kiroModel = resolveKiroModel(modelID)
-    if (!supportsEffort(kiroModel)) continue
-
-    models[`${modelID}-thinking`] = {
+    const thinkingEntry: Record<string, unknown> = {
       name: `${spec.name} Thinking (${spec.rate})`,
       limit: spec.limit,
       modalities: spec.modalities,
       reasoning: true,
-      interleaved: { field: 'reasoning_content' },
-      variants: buildVariants(kiroModel)
+      interleaved: { field: 'reasoning_content' }
     }
+    if (supportsEffort(kiroModel)) {
+      thinkingEntry.variants = buildVariants(kiroModel)
+    }
+    models[`${modelID}-thinking`] = thinkingEntry
   }
 
   return models
